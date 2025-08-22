@@ -1,4 +1,4 @@
-// Nouveau service proxy - Version 2
+// NOUVEAU CODE - Sans clé API nécessaire
 export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -23,35 +23,34 @@ export default async function handler(req, res) {
       });
     }
 
-    // Utilisation de l'API DeepSwapper (alternative à Replicate)
-    const response = await fetch('https://api.deepswapper.com/v1/faceswap', {
+    // Appel à un service public de FaceSwap (plus simple, sans clé)
+    const response = await fetch('https://faceswap.stablecog.com/api/swap', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.DEEPSWAPPER_API_KEY}` // Nouvelle clé API
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        source_image_url: source_image,
-        target_image_url: target_image,
-        face_enhance: true,
-        background_enhance: false
+        source_image,
+        target_image
       })
     });
 
     if (!response.ok) {
-      throw new Error(`DeepSwapper API error: ${response.statusText}`);
+        const errorBody = await response.text();
+        console.error("Erreur du service de swap:", errorBody);
+        throw new Error(`Le service de FaceSwap a échoué: ${response.statusText}`);
     }
 
-    const result = await response.json();
+    // Le service renvoie directement l'image, pas un JSON
+    const imageBuffer = await response.arrayBuffer();
+    const base64Image = Buffer.from(imageBuffer).toString('base64');
+    const dataUrl = `data:image/jpeg;base64,${base64Image}`;
 
     return res.status(200).json({
       success: true,
-      output_url: result.result_url,
-      processing_time: result.processing_time || 'N/A'
+      output_url: dataUrl,
     });
 
   } catch (error) {
-    console.error('Erreur FaceSwap V2:', error);
+    console.error('Erreur FaceSwap V2 (sans clé):', error);
     return res.status(500).json({
       success: false,
       error: error.message
